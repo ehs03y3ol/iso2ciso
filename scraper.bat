@@ -2,7 +2,7 @@
 setlocal EnableDelayedExpansion
 
 set "witRute=C:\wit-v3.05a-r8638-cygwin64\bin\wit.exe"
-set "imgFolder=usbloader_images"
+set "imgFolder=usLoader_images"
 set "failLog=failed_downloads.txt"
 
 if exist "%witRute%" (
@@ -38,8 +38,8 @@ if exist "games\*.ciso" (
         set "rawID="
         set "gameID="
         
-        rem Extract the ID. Added 2^>nul to hide ugly console errors if WIT crashes.
-        for /f "delims=" %%I in ('""%witRute%" id6 "%%~fF" 2^>nul"') do set "rawID=%%I"
+        rem Extract the ID using cmd /c so the 2>nul redirection actually works
+        for /f "delims=" %%I in ('cmd /c ""%witRute%" id6 "%%~fF" 2^>nul"') do set "rawID=%%I"
         
         rem ERROR HANDLING: Did WIT fail to read the file?
         if "!rawID!"=="" (
