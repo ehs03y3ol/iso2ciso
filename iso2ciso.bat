@@ -25,7 +25,7 @@ if exist "out\" (
       if errorlevel 1 (
         echo [ERROR] Failed to convert "%%~nxF"
       ) else (
-        echo [SUCCESS] Converted to "out\%%~nF.gcz"
+        echo [SUCCESS] Converted to "out\%%~nF.ciso"
         del "%%~nxF"
       )
   ) 
