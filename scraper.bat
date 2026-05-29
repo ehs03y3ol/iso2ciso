@@ -2,7 +2,7 @@
 setlocal EnableDelayedExpansion
 
 set "witRute=C:\wit-v3.05a-r8638-cygwin64\bin\wit.exe"
-set "imgFolder=usLoader_images"
+set "imgFolder=usbloader_images"
 set "failLog=failed_downloads.txt"
 
 if exist "%witRute%" (
@@ -38,8 +38,14 @@ if exist "games\*.ciso" (
         set "rawID="
         set "gameID="
         
-        rem Extract the ID using cmd /c so the 2>nul redirection actually works
-        for /f "delims=" %%I in ('cmd /c ""%witRute%" id6 "%%~fF" 2^>nul"') do set "rawID=%%I"
+        rem BULLETPROOF FIX: Write the ID to a temp file, hiding errors perfectly
+        "%witRute%" id6 "%%~fF" > temp_id.txt 2>nul
+        
+        rem Read the ID from the temp file into our variable
+        set /p rawID=<temp_id.txt 2>nul
+        
+        rem Delete the temp file instantly so no junk is left behind
+        if exist temp_id.txt del temp_id.txt
         
         rem ERROR HANDLING: Did WIT fail to read the file?
         if "!rawID!"=="" (
