@@ -1,5 +1,6 @@
 @echo off
-setlocal EnableDelayedExpansion
+rem 1. Start with this DISABLED so the loop can safely read "!" in filenames
+setlocal DisableDelayedExpansion
 
 set "witRute=C:\wit-v3.05a-r8638-cygwin64\bin\wit.exe"
 set "imgFolder=usbloader_images"
@@ -29,38 +30,37 @@ if not exist "%imgFolder%\full" mkdir "%imgFolder%\full"
 if exist "games\*.ciso" (
     
     for %%F in ("games\*.ciso") do (
+        
+        rem 2. Safely capture the path and name BEFORE delayed expansion wakes up
+        set "safePath=%%~fF"
+        set "safeName=%%~nxF"
+        
+        rem 3. NOW turn it on so our internal variables work!
+        setlocal EnableDelayedExpansion
+        
         echo.
         echo ----------------------------------------------------
-        echo Processing: "%%~nxF"
+        echo Processing: "!safeName!"
         echo ----------------------------------------------------
         
-        rem PURGE variables to prevent leaking from the previous file!
         set "rawID="
         set "gameID="
         
-        rem BULLETPROOF FIX: Write the ID to a temp file, hiding errors perfectly
-        "%witRute%" id6 "%%~fF" > temp_id.txt 2>nul
-        
-        rem Read the ID from the temp file into our variable
+        rem Use !safePath! instead of %%~fF to pass it cleanly to WIT
+        "%witRute%" id6 "!safePath!" > temp_id.txt 2>nul
         set /p rawID=<temp_id.txt 2>nul
-        
-        rem Delete the temp file instantly so no junk is left behind
         if exist temp_id.txt del temp_id.txt
         
-        rem ERROR HANDLING: Did WIT fail to read the file?
         if "!rawID!"=="" (
-            echo [ERROR] WIT failed to read the ID from "%%~nxF". Skipping downloads...
-            rem Save the failed filename to our log
-            echo %%~nxF >> "%failLog%"
+            echo [ERROR] WIT failed to read the ID from "!safeName!". Skipping downloads...
+            (echo !safeName!) >> "%failLog%"
         ) else (
             
-            rem Force exactly 6 characters
             set "gameID=!rawID:~0,6!"
             
-            rem Double check that it initialized correctly after trimming
             if "!gameID!"=="" (
-                echo [ERROR] ID extraction corrupted for "%%~nxF". Skipping...
-                echo %%~nxF >> "%failLog%"
+                echo [ERROR] ID extraction corrupted for "!safeName!". Skipping...
+                (echo !safeName!) >> "%failLog%"
             ) else (
                 echo Found Game ID: [!gameID!]
                 
@@ -80,15 +80,14 @@ if exist "games\*.ciso" (
                 curl -f -L -s -A "Mozilla/5.0" -o "%imgFolder%\full\!gameID!.png" "https://art.gametdb.com/wii/coverfull/US/!gameID!.png"
                 if not exist "%imgFolder%\full\!gameID!.png" curl -f -L -s -A "Mozilla/5.0" -o "%imgFolder%\full\!gameID!.png" "https://art.gametdb.com/wii/coverfull/EN/!gameID!.png"
                 
-                rem Delete the variable before the completion message
-                set "gameID="
-                
-                echo [SUCCESS] Finished processing "%%~nxF"
+                echo [SUCCESS] Finished processing "!safeName!"
             )
         )
         
-        rem Politeness Delay: Wait 1 second silently before the next game
         timeout /t 1 /nobreak >nul
+        
+        rem 4. Turn it back off before the loop repeats to read the next game!
+        endlocal
     )
     
 ) else (
@@ -100,7 +99,6 @@ echo.
 echo ====================================================
 echo Script finished! 
 
-rem Output the list of failed files at the end
 if exist "%failLog%" (
     echo.
     echo [WARNING] The following files failed to process or WIT couldn't read them:
