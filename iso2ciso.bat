@@ -12,7 +12,7 @@ if exist "%witRute%" (
     exit /b
 )
 echo Press start if you are ready to transform the files.
-echo [WARNING] Files will be deleted onche processed.
+echo [WARNING] Files will be deleted once processed.
 pause
 
 :: Check if there are any ISOs to process
